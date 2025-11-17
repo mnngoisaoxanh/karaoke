@@ -1,0 +1,580 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Admin - Quản lý danh sách karaoke</title>
+<style>
+:root{
+  --bg:#020617;
+  --bg-card:#020617;
+  --border:#111827;
+  --border-soft:#1f2937;
+  --accent:#22c55e;
+  --accent-soft:#16a34a;
+  --danger:#b91c1c;
+  --danger-border:#ef4444;
+  --text:#e5e7eb;
+  --muted:#9ca3af;
+}
+*,
+*::before,
+*::after{
+  box-sizing:border-box;
+}
+body{
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,Helvetica,sans-serif;
+  margin:0;
+  padding:10px 8px;
+  background:radial-gradient(circle at top,#1f2937 0,#020617 55%,#000 100%);
+  color:var(--text);
+}
+h2{
+  margin:0 0 4px;
+  font-size:18px;
+}
+input,button{
+  padding:8px;
+  margin:5px 0;
+  width:100%;
+  font-family:inherit;
+  font-size:13px;
+  border-radius:10px;
+  border:1px solid #4b5563;
+  background:#020617;
+  color:var(--text);
+}
+input::placeholder{
+  color:var(--muted);
+}
+button{
+  cursor:pointer;
+  background:#111827;
+  border-color:#4b5563;
+  color:#e5e7eb;
+  font-weight:500;
+  box-shadow:none;
+  transition:filter .12s,transform .08s;
+}
+button.primary{
+  background:linear-gradient(135deg,#22c55e,#16a34a);
+  border-color:#22c55e;
+  color:#022c22;
+}
+button.danger{
+  background:#b91c1c;
+  border-color:var(--danger-border);
+  color:#fee2e2;
+}
+button.small{
+  padding:4px 8px;
+  width:auto;
+  font-size:11px;
+  border-radius:999px;
+}
+button:hover{
+  filter:brightness(1.04);
+}
+button:active{
+  transform:scale(.97) translateY(1px);
+}
+.card{
+  background:rgba(15,23,42,.96);
+  border-radius:14px;
+  border:1px solid var(--border-soft);
+  padding:10px 8px 8px;
+  margin-bottom:10px;
+  box-shadow:0 10px 26px rgba(0,0,0,.7);
+}
+.container{
+  width:100%;
+  max-width:480px;
+  margin:0 auto;
+}
+.page-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  gap:6px;
+  margin-bottom:8px;
+}
+.page-sub{
+  font-size:11px;
+  color:var(--muted);
+}
+#authBox{
+  max-width:360px;
+  margin:10px auto 12px;
+}
+.label{
+  font-size:12px;
+  color:var(--muted);
+}
+.status{
+  font-size:11px;
+  color:var(--muted);
+  min-height:16px;
+  margin-top:2px;
+}
+.status.ok{
+  color:#4ade80;
+}
+.status.err{
+  color:#fb923c;
+}
+.layout{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.left-col{
+  flex:1;
+}
+.list-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:6px;
+}
+.list-header-title{
+  font-size:13px;
+  font-weight:600;
+}
+.badge-count{
+  display:inline-flex;
+  align-items:center;
+  gap:3px;
+  padding:1px 7px;
+  border-radius:999px;
+  font-size:10px;
+  background:#0ea5e9;
+  color:#022c22;
+}
+.badge-dot{
+  width:5px;
+  height:5px;
+  border-radius:999px;
+  background:#e0f2fe;
+}
+#list{
+  max-height:58vh;
+  overflow-y:auto;
+}
+/* ITEMS: index + actions bên trái, nội dung bên phải */
+.item{
+  padding:6px 6px;
+  background:#020617;
+  border:1px solid var(--border);
+  margin-bottom:5px;
+  display:grid;
+  grid-template-columns:auto 1fr;
+  gap:4px;
+  align-items:flex-start;
+  border-radius:8px;
+}
+.item-left{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:4px;
+  width:60px; /* đủ cho số thứ tự + 2 hàng nút */
+}
+.index{
+  font-size:10px;
+  color:#9ca3af;
+}
+.item-title{
+  font-size:12px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.item-meta{
+  font-size:10px;
+  color:#6b7280;
+}
+.actions{
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+}
+.actions-row{
+  display:flex;
+  gap:3px;
+}
+.badge{
+  display:inline-block;
+  padding:1px 5px;
+  border-radius:999px;
+  font-size:9px;
+  background:#22c55e;
+  color:#022c22;
+  margin-left:4px;
+}
+.small-text{
+  font-size:11px;
+  color:var(--muted);
+}
+
+.admin-quick{
+  margin-top:8px;
+  border-top:1px dashed #1f2937;
+  padding-top:6px;
+}
+.admin-quick h3{
+  margin:0 0 4px;
+  font-size:13px;
+}
+.admin-quick .hint{
+  font-size:11px;
+  color:var(--muted);
+  margin-bottom:4px;
+}
+
+/* Giảm nhẹ kích thước trên màn lớn hơn nhưng vẫn không tràn */
+@media(min-width:600px){
+  body{
+    padding:12px 10px;
+  }
+  .container{
+    max-width:520px;
+  }
+  #list{
+    max-height:420px;
+  }
+}
+</style>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+</head>
+<body>
+<div class="container">
+  <div class="page-header">
+    <div>
+      <h2>Admin - Quản lý danh sách karaoke</h2>
+      <div class="page-sub">Điều khiển hàng chờ phát nhạc</div>
+    </div>
+  </div>
+
+  <div id="authBox" class="card">
+    <div class="label">Nhập mật khẩu admin (đơn giản):</div>
+    <input id="adminPass" type="password" placeholder="Nhập 123 để vào admin" />
+    <button id="btnEnter" class="primary">Vào admin</button>
+    <div id="authStatus" class="status"></div>
+  </div>
+
+  <div id="adminUI" style="display:none">
+    <div class="layout">
+      <section class="left-col">
+        <div class="card">
+          <div class="list-header">
+            <div class="list-header-title">
+              Danh sách đang chờ
+            </div>
+            <div>
+              <span class="badge-count">
+                <span class="badge-dot"></span>
+                <span id="countBadge">0 bài</span>
+              </span>
+              &nbsp;
+              <button id="btnNext" class="primary small">Bài tiếp ▶</button>
+            </div>
+          </div>
+          <div id="list"></div>
+
+          <div class="admin-quick">
+            <h3>Admin thêm nhanh bài hát</h3>
+            <div class="hint">Dán link YouTube, chỉnh tên (nếu cần) rồi bấm "Thêm link vào danh sách".</div>
+            <input id="adminLink" placeholder="https://www.youtube.com/watch?v=..." />
+            <input id="adminTitle" placeholder="Tên hiển thị (nếu để trống sẽ lấy tiêu đề YouTube)" />
+            <button id="adminAddLinkBtn" class="primary small">Thêm link vào danh sách</button>
+            <div id="adminStatus" class="status"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+// CẤU HÌNH FIREBASE (giống các trang khác)
+const firebaseConfig = {
+  apiKey: "AIzaSyBlj5BXufxS4lp4wdVgDKFAncbsUpqa-G8",
+  authDomain: "thutuphat-c751f.firebaseapp.com",
+  projectId: "thutuphat-c751f",
+  storageBucket: "thutuphat-c751f.firebasestorage.app",
+  messagingSenderId: "418283924180",
+  appId: "1:418283924180:web:0814987f795cc10a362941",
+  databaseURL: "https://thutuphat-c751f-default-rtdb.asia-southeast1.firebasedatabase.app"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// "Mật khẩu" đơn giản (không bảo mật, chỉ để tránh đụng nhầm)
+const SIMPLE_ADMIN_PASS = "123";
+const ADMIN_AUTH_KEY = "karaoke_admin_auth";
+
+const authBox = document.getElementById("authBox");
+const adminUI = document.getElementById("adminUI");
+const authStatus = document.getElementById("authStatus");
+const listEl = document.getElementById("list");
+const countBadge = document.getElementById("countBadge");
+const adminStatus = document.getElementById("adminStatus");
+
+let items = []; // { key, videoId, title, url, order, addedAt }
+
+// Tự động vào admin nếu đã đăng nhập trước đó trên trình duyệt này
+if(localStorage.getItem(ADMIN_AUTH_KEY) === "ok"){
+  authBox.style.display = "none";
+  adminUI.style.display = "block";
+  subscribeQueue();
+}
+
+document.getElementById("btnEnter").addEventListener("click", ()=>{
+  const val = (document.getElementById("adminPass").value || "").trim();
+  if(val === SIMPLE_ADMIN_PASS){
+    localStorage.setItem(ADMIN_AUTH_KEY, "ok");
+    authStatus.textContent = "";
+    authBox.style.display = "none";
+    adminUI.style.display = "block";
+    subscribeQueue();
+  }else{
+    authStatus.textContent = "Sai mật khẩu. Gợi ý: 123";
+  }
+});
+
+document.getElementById("adminPass").addEventListener("keydown",(e)=>{
+  if(e.key === "Enter"){
+    document.getElementById("btnEnter").click();
+  }
+});
+
+// Bấm "Bài tiếp" -> bảo player chuyển sang bài kế tiếp ngay
+document.getElementById("btnNext").addEventListener("click", ()=>{
+  if(items.length <= 0) return;
+  db.ref("control").set({
+    action: "skip_next",
+    ts: Date.now()
+  }).catch(err=>{
+    console.error("skip_next error", err);
+    alert("Lỗi gửi lệnh bài tiếp: " + err.message);
+  });
+});
+
+function subscribeQueue(){
+  db.ref("queue").orderByChild("order").on("value", snap=>{
+    const obj = snap.val() || {};
+    items = Object.entries(obj).map(([k,v])=>({
+      key: k,
+      videoId: v.videoId,
+      title: v.title || v.url,
+      url: v.url,
+      order: v.order || v.addedAt || 0,
+      addedAt: v.addedAt || null
+    }));
+    items.sort((a,b)=> (a.order||0) - (b.order||0));
+    render();
+  });
+}
+
+function render(){
+  listEl.innerHTML = "";
+  countBadge.textContent = items.length + " bài";
+
+  if(items.length === 0){
+    const div = document.createElement("div");
+    div.className = "item";
+    div.innerHTML = '<div class="item-left"><div class="index"></div></div><div class="item-title">Danh sách trống</div>';
+    listEl.appendChild(div);
+    return;
+  }
+
+  items.forEach((it, idx)=>{
+    const li = document.createElement("div");
+    li.className = "item";
+
+    const left = document.createElement("div");
+    left.className = "item-left";
+
+    const indexDiv = document.createElement("div");
+    indexDiv.className = "index";
+    indexDiv.textContent = idx+1;
+
+    const actionsDiv = document.createElement("div");
+    actionsDiv.className = "actions";
+
+    const row1 = document.createElement("div");
+    row1.className = "actions-row";
+
+    // Nút phát bài này ngay (bên trái)
+    const playThisBtn = document.createElement("button");
+    playThisBtn.className = "primary small";
+    playThisBtn.textContent = "▶";
+    playThisBtn.title = "Phát bài này";
+    playThisBtn.addEventListener("click", ()=>{
+      db.ref("control").set({
+        action: "play_at_index",
+        index: idx,
+        ts: Date.now()
+      }).catch(err=>{
+        console.error("play_at_index error", err);
+        alert("Lỗi gửi lệnh phát bài này: " + err.message);
+      });
+    });
+
+    const delBtn = document.createElement("button");
+    delBtn.className = "danger small";
+    delBtn.textContent = "X";
+    delBtn.title = "Xóa";
+    delBtn.addEventListener("click", ()=>{
+      if(confirm("Xác nhận xóa bài này?")){
+        db.ref("queue/"+it.key).remove();
+      }
+    });
+
+    row1.appendChild(playThisBtn);
+    row1.appendChild(delBtn);
+
+    const row2 = document.createElement("div");
+    row2.className = "actions-row";
+
+    // Nút đưa lên đầu danh sách
+    const toTopBtn = document.createElement("button");
+    toTopBtn.className = "small";
+    toTopBtn.textContent = "⇡";
+    toTopBtn.title = "Đưa lên đầu";
+    toTopBtn.disabled = (idx === 0);
+    toTopBtn.addEventListener("click", ()=> moveItem(idx, 0));
+
+    const upBtn = document.createElement("button");
+    upBtn.className = "small";
+    upBtn.textContent = "↑";
+    upBtn.title = "Lên";
+    upBtn.disabled = (idx === 0);
+    upBtn.addEventListener("click", ()=> moveItem(idx, idx-1));
+
+    const downBtn = document.createElement("button");
+    downBtn.className = "small";
+    downBtn.textContent = "↓";
+    downBtn.title = "Xuống";
+    downBtn.disabled = (idx === items.length-1);
+    downBtn.addEventListener("click", ()=> moveItem(idx, idx+1));
+
+    row2.appendChild(toTopBtn);
+    row2.appendChild(upBtn);
+    row2.appendChild(downBtn);
+
+    actionsDiv.appendChild(row1);
+    actionsDiv.appendChild(row2);
+
+    left.appendChild(indexDiv);
+    left.appendChild(actionsDiv);
+
+    const mainDiv = document.createElement("div");
+    const titleDiv = document.createElement("div");
+    titleDiv.className = "item-title";
+    titleDiv.textContent = it.title || it.url || it.videoId;
+    if(idx === 0){
+      const b = document.createElement("span");
+      b.className = "badge";
+      b.textContent = "Bài đầu";
+      titleDiv.appendChild(document.createTextNode(" "));
+      titleDiv.appendChild(b);
+    }
+    const metaDiv = document.createElement("div");
+    metaDiv.className = "item-meta";
+    let meta = "ID: " + (it.videoId || "");
+    if(it.addedAt){
+      const d = new Date(it.addedAt);
+      meta += " · " + d.toLocaleTimeString();
+    }
+    metaDiv.textContent = meta;
+    mainDiv.appendChild(titleDiv);
+    mainDiv.appendChild(metaDiv);
+
+    li.appendChild(left);
+    li.appendChild(mainDiv);
+
+    listEl.appendChild(li);
+  });
+}
+
+// Đổi thứ tự bằng cách hoán đổi field "order" giữa 2 item
+function moveItem(fromIdx, toIdx){
+  if(fromIdx < 0 || fromIdx >= items.length) return;
+  if(toIdx < 0 || toIdx >= items.length) return;
+  const a = items[fromIdx];
+  const b = items[toIdx];
+  if(!a || !b) return;
+
+  const ref = db.ref("queue");
+  const updates = {};
+  const aOrder = (a.order != null ? a.order : a.addedAt || 0);
+  const bOrder = (b.order != null ? b.order : b.addedAt || 0);
+  updates[a.key + "/order"] = bOrder;
+  updates[b.key + "/order"] = aOrder;
+  ref.update(updates).catch(err=>{
+    console.error("moveItem error", err);
+    alert("Lỗi khi đổi thứ tự: " + err.message);
+  });
+}
+
+// --- Admin thêm bài qua link trực tiếp ---
+function extractVideoId(url){
+  if(!url) return null;
+  try{
+    const u = new URL(url);
+    if(u.hostname.includes("youtu.be")) return u.pathname.slice(1);
+    if(u.hostname.includes("youtube.com")){
+      if(u.searchParams.get("v")) return u.searchParams.get("v");
+      const m = u.pathname.match(/\/embed\/([^/?]+)/);
+      if(m) return m[1];
+    }
+  }catch(e){}
+  const m = url.match(/(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{6,})/);
+  return m ? m[1] : null;
+}
+
+function makeYoutubeUrl(videoId){
+  return "https://www.youtube.com/watch?v=" + videoId;
+}
+
+async function adminPushToQueue(videoId, title){
+  if(!videoId) throw new Error("Không có videoId");
+  const url = makeYoutubeUrl(videoId);
+  const payload = {
+    url,
+    videoId,
+    title: title || url,
+    addedAt: firebase.database.ServerValue.TIMESTAMP,
+    order: Date.now()
+  };
+  await db.ref("queue").push(payload);
+}
+
+document.getElementById("adminAddLinkBtn").addEventListener("click", async ()=>{
+  adminStatus.textContent = "";
+  adminStatus.className = "status";
+  const link = (document.getElementById("adminLink").value || "").trim();
+  const title = (document.getElementById("adminTitle").value || "").trim() || null;
+  const vid = extractVideoId(link);
+  if(!vid){
+    adminStatus.textContent = "Link không hợp lệ.";
+    adminStatus.classList.add("err");
+    return;
+  }
+  try{
+    await adminPushToQueue(vid, title);
+    adminStatus.textContent = "Đã thêm bài vào danh sách.";
+    adminStatus.classList.add("ok");
+    document.getElementById("adminLink").value = "";
+    document.getElementById("adminTitle").value = "";
+  }catch(err){
+    console.error(err);
+    adminStatus.textContent = "Lỗi: " + err.message;
+    adminStatus.classList.add("err");
+  }
+});
+</script>
+</body>
+</html>

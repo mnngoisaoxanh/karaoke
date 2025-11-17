@@ -1,0 +1,482 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Karaoke Ngôi Sao Xanh chơi hết mình</title>
+<style>
+body{
+  font-family:Arial,Helvetica,sans-serif;
+  margin:0;
+  padding:0;
+  background:#020617;
+  color:#e5e7eb;
+}
+.container{
+  max-width:1200px;
+  margin:0 auto;
+  padding:12px;
+}
+header{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:space-between;
+  align-items:center;
+  gap:8px;
+  margin-bottom:8px;
+}
+header h1{
+  margin:0;
+  font-size:20px;
+}
+.badge{
+  display:inline-block;
+  padding:2px 8px;
+  border-radius:999px;
+  font-size:11px;
+  background:#111827;
+  border:1px solid #4b5563;
+  color:#9ca3af;
+}
+.layout{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+@media (min-width:900px){
+  .layout{
+    flex-direction:row;
+    align-items:flex-start;
+  }
+}
+.player-panel{
+  flex:2;
+}
+.queue-panel{
+  flex:1.2;
+  max-height:560px;
+  overflow-y:auto;
+  background:#020617;
+  border-radius:10px;
+  border:1px solid #1f2937;
+}
+#player{
+  width:100%;
+  max-width:960px;
+  aspect-ratio:16/9;
+  background:#000;
+  border-radius:8px;
+  overflow:hidden;
+}
+.controls{
+  margin-top:8px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  align-items:center;
+}
+.btn{
+  padding:6px 10px;
+  border-radius:6px;
+  border:1px solid #4b5563;
+  background:#111827;
+  color:#e5e7eb;
+  cursor:pointer;
+  font-size:13px;
+}
+.btn.primary{
+  background:#22c55e;
+  border-color:#22c55e;
+  color:#022c22;
+}
+.btn.icon{
+  padding:4px 6px;
+  font-size:11px;
+}
+.btn:hover{
+  filter:brightness(1.1);
+}
+.status-text{
+  font-size:13px;
+  color:#9ca3af;
+}
+.status-text span.now{
+  color:#facc15;
+}
+.queue-header{
+  position:sticky;
+  top:0;
+  z-index:1;
+  background:#020617;
+  border-bottom:1px solid #1f2937;
+  padding:8px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.queue-title{
+  font-size:14px;
+  font-weight:600;
+}
+.queue-info{
+  font-size:12px;
+  color:#9ca3af;
+}
+.queue-list{
+  list-style:none;
+  margin:0;
+  padding:0;
+}
+.queue-item{
+  display:grid;
+  grid-template-columns:auto 1fr;
+  gap:6px;
+  padding:8px;
+  border-bottom:1px solid #111827;
+  align-items:center;
+}
+.queue-item:nth-child(odd){
+  background:#020617;
+}
+.queue-item:nth-child(even){
+  background:#020617;
+}
+.queue-item.playing{
+  background:#0f172a;
+}
+.queue-index{
+  font-size:12px;
+  color:#6b7280;
+  width:26px;
+  text-align:right;
+}
+.queue-main{
+  min-width:0;
+}
+.queue-title-text{
+  font-size:13px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.queue-meta{
+  font-size:11px;
+  color:#6b7280;
+}
+.badge-playing{
+  display:inline-block;
+  padding:1px 6px;
+  font-size:10px;
+  border-radius:999px;
+  background:#22c55e;
+  color:#022c22;
+  margin-left:4px;
+}
+.badge-next{
+  display:inline-block;
+  padding:1px 6px;
+  font-size:10px;
+  border-radius:999px;
+  background:#0ea5e9;
+  color:#022c22;
+  margin-left:4px;
+}
+.empty{
+  padding:12px;
+  font-size:13px;
+  color:#6b7280;
+}
+
+/* Nút điều khiển từ admin */
+.admin-control-btn{
+  padding:4px 8px;
+  border-radius:4px;
+  border:1px solid #22c55e;
+  background:#064e3b;
+  color:#bbf7d0;
+  font-size:11px;
+  cursor:pointer;
+  margin-left:6px;
+}
+.admin-control-btn:hover{
+  filter:brightness(1.1);
+}
+</style>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.youtube.com/iframe_api"></script>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div>
+      <h1>Karaoke Ngôi Sao Xanh chơi hết mình</h1>
+      <div class="badge">Chế độ xem & phát nhạc</div>
+    </div>
+    <div class="status-text" id="status">Đang khởi tạo player...</div>
+  </header>
+
+  <div class="layout">
+    <section class="player-panel">
+      <div id="player"></div>
+      <div class="controls">
+        <button id="playpause" class="btn primary">⏯ Play / Pause</button>
+        <button id="btnNextPlayer" class="btn">▶ Bài tiếp</button>
+        <button id="fullscreen" class="btn icon">⛶ Toàn màn hình</button>
+      </div>
+    </section>
+
+    <aside class="queue-panel">
+      <div class="queue-header">
+        <div class="queue-title">Danh sách sẽ phát</div>
+        <div class="queue-info" id="queueInfo">0 bài</div>
+      </div>
+      <ul id="queueList" class="queue-list"></ul>
+    </aside>
+  </div>
+</div>
+
+<script>
+// Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyBlj5BXufxS4lp4wdVgDKFAncbsUpqa-G8",
+  authDomain: "thutuphat-c751f.firebaseapp.com",
+  projectId: "thutuphat-c751f",
+  storageBucket: "thutuphat-c751f.firebasestorage.app",
+  messagingSenderId: "418283924180",
+  appId: "1:418283924180:web:0814987f795cc10a362941",
+  databaseURL: "https://thutuphat-c751f-default-rtdb.asia-southeast1.firebasedatabase.app"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+let ytPlayer;
+let playingIndex = -1;
+let queue = []; // {key, videoId, title, url, order, addedAt}
+
+// Lắng nghe tín hiệu điều khiển từ admin
+const controlRef = db.ref("control");
+
+// --- YouTube Iframe API ---
+function onYouTubeIframeAPIReady(){
+  ytPlayer = new YT.Player("player", {
+    height: "540",
+    width: "960",
+    videoId: "",
+    playerVars: { playsinline: 1 },
+    events: {
+      onReady: () => {
+        document.getElementById("status").textContent = "Sẵn sàng. Sẽ tự động phát theo danh sách.";
+      },
+      onStateChange: onPlayerStateChange
+    }
+  });
+}
+window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
+
+function onPlayerStateChange(e){
+  if(e.data === YT.PlayerState.ENDED){
+    playNextAuto();
+  }
+}
+
+// --- Playback control (chỉ play/pause + tự next) ---
+function updateStatus(){
+  const statusEl = document.getElementById("status");
+  if(playingIndex < 0 || playingIndex >= queue.length){
+    if(queue.length === 0){
+      statusEl.textContent = "Danh sách trống. Hãy thêm bài từ trang client.";
+    }else{
+      statusEl.textContent = "Sẵn sàng. Bài đầu sẽ phát khi nhấn play.";
+    }
+    return;
+  }
+  const v = queue[playingIndex];
+  statusEl.innerHTML = 'Đang phát: <span class="now">'+(v.title || v.videoId)+'</span>';
+}
+
+function playAt(index){
+  if(index < 0 || index >= queue.length || !ytPlayer) return;
+  playingIndex = index;
+  const v = queue[index];
+  ytPlayer.loadVideoById(v.videoId);
+  updateStatus();
+  renderList();
+}
+
+function playNextAuto(){
+  if(queue.length === 0) return;
+  const nextIdx = (playingIndex + 1 < queue.length) ? playingIndex + 1 : 0;
+  playAt(nextIdx);
+}
+
+let firstStart = false;
+
+document.getElementById("playpause").addEventListener("click", ()=>{
+  if(!ytPlayer){
+    if(queue.length > 0){
+      playAt(0);
+    }
+    return;
+  }
+
+  // Lần bấm đầu tiên: vừa fullscreen vừa phát bài đầu
+  if(!firstStart){
+    firstStart = true;
+    const iframe = document.querySelector("#player iframe");
+    try{
+      if(iframe && iframe.requestFullscreen){
+        iframe.requestFullscreen();
+      }else if(iframe && iframe.webkitRequestFullscreen){
+        iframe.webkitRequestFullscreen();
+      }else if(iframe && iframe.msRequestFullscreen){
+        iframe.msRequestFullscreen();
+      }
+    }catch(e){
+      console.warn("Fullscreen request bị chặn:", e);
+    }
+    if(queue.length > 0){
+      playAt(0);
+    }else{
+      ytPlayer.playVideo();
+    }
+    return;
+  }
+
+  const s = ytPlayer.getPlayerState();
+  if(s === YT.PlayerState.PLAYING){
+    ytPlayer.pauseVideo();
+  }else if(s === YT.PlayerState.PAUSED || s === YT.PlayerState.CUED){
+    ytPlayer.playVideo();
+  }else if((s === -1 || s === YT.PlayerState.ENDED) && queue.length > 0){
+    playAt(0);
+  }else{
+    ytPlayer.playVideo();
+  }
+});
+
+// Fullscreen button (nếu muốn bấm lại bằng tay)
+document.getElementById("fullscreen").addEventListener("click", ()=>{
+  const iframe = document.querySelector("#player iframe");
+  if(iframe && iframe.requestFullscreen){
+    iframe.requestFullscreen();
+  }else if(iframe && iframe.webkitRequestFullscreen){
+    iframe.webkitRequestFullscreen();
+  }else if(iframe && iframe.msRequestFullscreen){
+    iframe.msRequestFullscreen();
+  }
+});
+
+// Nút "Bài tiếp" trên player (skip ngay lập tức)
+document.getElementById("btnNextPlayer").addEventListener("click", ()=>{
+  if(queue.length === 0) return;
+  const nextIdx = (playingIndex + 1 < queue.length) ? playingIndex + 1 : 0;
+  playAt(nextIdx);
+});
+
+// --- Queue rendering (chỉ hiển thị, không có nút xóa / reorder) ---
+function renderList(){
+  const listEl = document.getElementById("queueList");
+  const infoEl = document.getElementById("queueInfo");
+  listEl.innerHTML = "";
+
+  infoEl.textContent = queue.length + " bài";
+
+  if(queue.length === 0){
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.textContent = "Chưa có bài trong danh sách. Hãy dùng trang client để thêm bài.";
+    listEl.appendChild(empty);
+    return;
+  }
+
+  queue.forEach((it, idx)=>{
+    const li = document.createElement("li");
+    li.className = "queue-item";
+    if(idx === playingIndex){
+      li.classList.add("playing");
+    }
+
+    const idxDiv = document.createElement("div");
+    idxDiv.className = "queue-index";
+    idxDiv.textContent = (idx+1).toString();
+
+    const mainDiv = document.createElement("div");
+    mainDiv.className = "queue-main";
+    const titleSpan = document.createElement("div");
+    titleSpan.className = "queue-title-text";
+    titleSpan.textContent = it.title || it.url || it.videoId;
+    const metaDiv = document.createElement("div");
+    metaDiv.className = "queue-meta";
+    let metaText = "ID: "+(it.videoId || "");
+    if(it.addedAt){
+      const d = new Date(it.addedAt);
+      metaText += " · " + d.toLocaleTimeString();
+    }
+    metaDiv.textContent = metaText;
+    titleSpan.appendChild(document.createTextNode(" "));
+    if(idx === playingIndex){
+      const badge = document.createElement("span");
+      badge.className = "badge-playing";
+      badge.textContent = "Đang phát";
+      titleSpan.appendChild(badge);
+    }else if(idx === playingIndex+1){
+      const badgeN = document.createElement("span");
+      badgeN.className = "badge-next";
+      badgeN.textContent = "Tiếp theo";
+      titleSpan.appendChild(badgeN);
+    }
+    mainDiv.appendChild(titleSpan);
+    mainDiv.appendChild(metaDiv);
+
+    li.appendChild(idxDiv);
+    li.appendChild(mainDiv);
+    listEl.appendChild(li);
+  });
+}
+
+// Listen to Firebase queue (chỉ đọc)
+db.ref("queue").orderByChild("order").on("value", snap=>{
+  const obj = snap.val() || {};
+  queue = Object.entries(obj).map(([k,v])=>{
+    return {
+      key: k,
+      videoId: v.videoId,
+      title: v.title || v.url,
+      url: v.url,
+      order: v.order || v.addedAt || 0,
+      addedAt: v.addedAt || null
+    };
+  });
+  queue.sort((a,b)=> (a.order||0) - (b.order||0));
+  if(playingIndex >= queue.length){
+    playingIndex = (queue.length > 0) ? 0 : -1;
+  }
+  renderList();
+  updateStatus();
+});
+
+// Player nghe lệnh từ admin
+controlRef.on("value", snap=>{
+  const data = snap.val();
+  if(!data) return;
+
+  // Skip sang bài tiếp
+  if(data.action === "skip_next"){
+    playNextAuto();
+  }
+
+  // Phát bài cụ thể do admin chọn
+  if(data.action === "play_at_index"){
+    const idx = typeof data.index === "number" ? data.index : parseInt(data.index, 10);
+    if(!isNaN(idx) && idx >= 0 && idx < queue.length){
+      playAt(idx);
+    }
+  }
+
+  // Sau khi xử lý xong, xóa lệnh để tránh lặp lại
+  controlRef.remove().catch(()=>{});
+});
+</script>
+</body>
+</html>

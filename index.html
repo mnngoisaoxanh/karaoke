@@ -1,0 +1,694 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Karaoke Queue - Tìm & Gửi bài hát</title>
+<style>
+:root{
+  --bg:#f3f4ff;
+  --bg-card:#ffffff;
+  --bg-soft:#eef2ff;
+  --border:rgba(148,163,184,0.5);
+  --primary:#22c55e;
+  --primary-dark:#16a34a;
+  --accent:#4f46e5;
+  --accent-soft:#e0e7ff;
+  --text:#0f172a;
+  --muted:#6b7280;
+  --muted-soft:#9ca3af;
+}
+*,
+*::before,
+*::after{
+  box-sizing:border-box;
+}
+body{
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,Helvetica,sans-serif;
+  margin:0;
+  padding:0;
+  background:linear-gradient(145deg,#e0f2fe 0,#f9fafb 45%,#fee2e2 100%);
+  color:var(--text);
+}
+.container{
+  width:100%;
+  max-width:480px;
+  margin:0 auto;
+  padding:14px 12px 18px;
+}
+header{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  margin-bottom:12px;
+}
+header h1{
+  margin:0;
+  font-size:20px;
+}
+.badge{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  padding:3px 10px;
+  border-radius:999px;
+  font-size:11px;
+  background:rgba(255,255,255,0.9);
+  border:1px solid rgba(148,163,184,0.6);
+  box-shadow:0 6px 14px rgba(148,163,184,0.55);
+  color:var(--muted);
+}
+.badge-dot{
+  width:7px;
+  height:7px;
+  border-radius:999px;
+  background:var(--primary);
+  box-shadow:0 0 0 3px rgba(34,197,94,0.25);
+}
+.note{
+  font-size:12px;
+  color:var(--muted);
+}
+.card{
+  background:var(--bg-card);
+  border-radius:18px;
+  border:1px solid var(--border);
+  padding:12px 12px 14px;
+  box-shadow:
+    0 18px 35px rgba(15,23,42,0.13),
+    0 0 0 1px rgba(255,255,255,0.9);
+}
+.section-title{
+  font-size:13px;
+  font-weight:600;
+  margin:0 0 2px;
+}
+.section-sub{
+  font-size:11px;
+  color:var(--muted-soft);
+}
+.search-top{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  margin-top:8px;
+}
+.search-input-wrap{
+  position:relative;
+}
+.search-input-wrap input{
+  padding-left:36px;
+}
+.search-icon{
+  position:absolute;
+  left:12px;
+  top:50%;
+  transform:translateY(-50%);
+  font-size:14px;
+  color:var(--muted-soft);
+}
+.row-inline{
+  display:flex;
+  gap:8px;
+}
+.row-inline > *{
+  flex:1;
+}
+label{
+  font-size:12px;
+  color:var(--muted);
+}
+input,button{
+  font-family:inherit;
+  font-size:14px;
+  padding:11px;
+  border-radius:999px;
+  border:1px solid rgba(148,163,184,0.7);
+  background:rgba(255,255,255,0.9);
+  color:var(--text);
+  width:100%;
+}
+input::placeholder{
+  color:var(--muted-soft);
+}
+button{
+  cursor:pointer;
+  background:linear-gradient(135deg,#22c55e,#16a34a);
+  border-color:transparent;
+  color:#022c22;
+  font-weight:600;
+  box-shadow:0 8px 20px rgba(34,197,94,0.55);
+}
+button:active{
+  transform:scale(0.98) translateY(1px);
+  box-shadow:0 4px 10px rgba(34,197,94,0.4);
+}
+button:hover{
+  filter:brightness(1.03);
+}
+button.secondary{
+  background:linear-gradient(135deg,#e5e7eb,#e0f2fe);
+  border-color:rgba(148,163,184,0.7);
+  color:#111827;
+  font-weight:500;
+  box-shadow:0 6px 16px rgba(148,163,184,0.6);
+}
+button.secondary:hover{
+  filter:brightness(1.04);
+}
+.status{
+  margin-top:6px;
+  font-size:12px;
+}
+.status.ok{
+  color:#16a34a;
+}
+.status.err{
+  color:#e11d48;
+}
+
+.results{
+  margin-top:10px;
+  max-height:55vh;
+  overflow-y:auto;
+  padding-right:2px;
+}
+.result-item{
+  display:flex;
+  gap:8px;
+  padding:8px;
+  border-radius:14px;
+  background:rgba(255,255,255,0.96);
+  border:1px solid rgba(148,163,184,0.55);
+  margin-bottom:8px;
+  box-shadow:0 14px 30px rgba(15,23,42,0.18);
+}
+.result-thumb img{
+  width:90px;
+  height:52px;
+  object-fit:cover;
+  border-radius:8px;
+  box-shadow:0 8px 18px rgba(15,23,42,0.35);
+}
+.result-main{
+  flex:1;
+  min-width:0;
+}
+.result-title{
+  font-size:13px;
+  font-weight:600;
+  color:var(--text);
+  margin-bottom:2px;
+}
+.result-channel{
+  font-size:11px;
+  color:var(--muted);
+}
+.result-meta{
+  font-size:10px;
+  color:var(--muted-soft);
+}
+.result-actions{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  align-items:flex-end;
+}
+.result-actions button{
+  width:116px;
+  font-size:12px;
+  padding:7px 9px;
+}
+.small{
+  font-size:10px;
+  color:var(--muted-soft);
+}
+.link-section{
+  margin-top:12px;
+}
+.link-input-row{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  margin-top:8px;
+}
+.link-input-row button{
+  border-radius:999px;
+}
+@media (min-width:480px){
+  .link-input-row{
+    flex-direction:row;
+  }
+  .link-input-row input{
+    flex:1.4;
+  }
+  .link-input-row button{
+    flex:0.8;
+  }
+}
+.queue-card{
+  margin-top:14px;
+  background:linear-gradient(135deg,#eef2ff,#eff6ff);
+  border-radius:18px;
+  border:1px solid rgba(129,140,248,0.55);
+  box-shadow:0 18px 38px rgba(79,70,229,0.3);
+  padding:10px 10px 12px;
+}
+.queue-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:6px;
+}
+.queue-header-title{
+  font-size:13px;
+  font-weight:600;
+}
+.queue-count{
+  font-size:11px;
+  padding:2px 8px;
+  border-radius:999px;
+  background:rgba(255,255,255,0.9);
+  border:1px solid rgba(129,140,248,0.6);
+}
+.queue-list-client{
+  max-height:42vh;
+  overflow-y:auto;
+  padding-top:4px;
+}
+.queue-item-client{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  padding:7px 8px;
+  margin-bottom:6px;
+  border-radius:12px;
+  background:rgba(255,255,255,0.96);
+  box-shadow:0 10px 24px rgba(15,23,42,0.16);
+}
+.queue-index{
+  font-size:11px;
+  color:var(--muted-soft);
+  width:22px;
+  text-align:right;
+}
+.queue-main{
+  flex:1;
+  min-width:0;
+}
+.queue-title{
+  font-size:12px;
+  font-weight:600;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.queue-meta{
+  font-size:10px;
+  color:var(--muted-soft);
+}
+.queue-badge-next{
+  display:inline-block;
+  padding:1px 6px;
+  margin-left:4px;
+  font-size:10px;
+  border-radius:999px;
+  background:#4f46e5;
+  color:#eef2ff;
+}
+.footer-note{
+  margin-top:10px;
+  font-size:11px;
+  text-align:center;
+  color:var(--muted);
+}
+</style>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div>
+      <h1>Karaoke Ngôi Sao Xanh</h1>
+      <div class="badge">
+        <span class="badge-dot"></span>
+        Client · Tìm & gửi bài hát
+      </div>
+    </div>
+    <div class="note">
+      Yêu Thương và Chia Sẽ
+    </div>
+  </header>
+
+  <section class="card">
+    <div class="section-title">Tìm bài hát trên YouTube</div>
+    <div class="section-sub">Nhập từ khoá, ví dụ: "bolero remix", "Sơn Tùng MTP"...</div>
+
+    <div class="search-top">
+      <div class="search-input-wrap">
+        <span class="search-icon">🔍</span>
+        <input id="searchQuery" type="text" autocomplete="off"
+               placeholder="Nhập tên bài hát hoặc ca sĩ..." />
+      </div>
+      <div class="row-inline">
+        <button id="searchBtn">Tìm kiếm</button>
+        <button id="clearBtn" class="secondary">Xoá kết quả</button>
+      </div>
+    </div>
+
+    <div id="searchStatus" class="status"></div>
+    <div id="results" class="results"></div>
+  </section>
+
+  <section class="queue-card">
+    <div class="queue-header">
+      <div class="queue-header-title">Danh sách sẽ phát</div>
+      <div id="clientQueueCount" class="queue-count">0 bài</div>
+    </div>
+    <div id="queueListClient" class="queue-list-client"></div>
+  </section>
+
+  <section class="card link-section">
+    <div class="section-title">Hoặc dán link YouTube trực tiếp</div>
+    <div class="section-sub">Trong app YouTube: Chia sẻ → Sao chép liên kết → dán vào ô dưới.</div>
+    <div class="link-input-row">
+      <input id="ytlink" placeholder="https://www.youtube.com/watch?v=..." />
+      <button id="addLinkBtn">Thêm vào danh sách</button>
+    </div>
+    <div id="status" class="status"></div>
+  </section>
+</div>
+
+<script>
+// Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyBlj5BXufxS4lp4wdVgDKFAncbsUpqa-G8",
+  authDomain: "thutuphat-c751f.firebaseapp.com",
+  projectId: "thutuphat-c751f",
+  storageBucket: "thutuphat-c751f.firebasestorage.app",
+  messagingSenderId: "418283924180",
+  appId: "1:418283924180:web:0814987f795cc10a362941",
+  databaseURL: "https://thutuphat-c751f-default-rtdb.asia-southeast1.firebasedatabase.app"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// YouTube Data API keys (client-side) - dùng 2 key
+const YT_API_KEYS = [
+  "AIzaSyDj7CtMM6VYbtKwTZmJTbLWfSqIrl-crnA",   // key 1 (cũ)
+  "AIzaSyBygbJWzAVfpIs-0HFmvXMO_YXcJjB3MHc",   // key 2 (bạn vừa gửi)
+];
+
+let ytApiKeyIndex = 0;
+
+function getCurrentYtApiKey(){
+  return YT_API_KEYS[ytApiKeyIndex % YT_API_KEYS.length];
+}
+
+// Chuyển sang key tiếp theo khi gặp lỗi quota
+function rotateYtApiKey(){
+  ytApiKeyIndex = (ytApiKeyIndex + 1) % YT_API_KEYS.length;
+}
+
+function extractVideoId(url){
+  if(!url) return null;
+  try{
+    const u = new URL(url);
+    if(u.hostname.includes('youtu.be')) return u.pathname.slice(1);
+    if(u.hostname.includes('youtube.com')){
+      if(u.searchParams.get('v')) return u.searchParams.get('v');
+      const m = u.pathname.match(/\/embed\/([^/?]+)/);
+      if(m) return m[1];
+    }
+  }catch(e){}
+  const m = url.match(/(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{6,})/);
+  return m ? m[1] : null;
+}
+
+function makeYoutubeUrl(videoId){
+  return "https://www.youtube.com/watch?v=" + videoId;
+}
+
+async function pushToQueue(videoId, title){
+  if(!videoId) throw new Error("Không có videoId");
+  const url = makeYoutubeUrl(videoId);
+  const payload = {
+    url,
+    videoId,
+    title: title || url,
+    addedAt: firebase.database.ServerValue.TIMESTAMP,
+    order: Date.now()
+  };
+  await db.ref("queue").push(payload);
+}
+
+// --- Search via YouTube Data API v3 ---
+async function searchYoutube(query){
+  const statusEl = document.getElementById("searchStatus");
+  const resultsEl = document.getElementById("results");
+  statusEl.textContent = "";
+  statusEl.className = "status";
+  resultsEl.innerHTML = "";
+
+  if(!query || query.trim().length < 2){
+    statusEl.textContent = "Vui lòng nhập ít nhất 2 ký tự.";
+    statusEl.classList.add("err");
+    return;
+  }
+
+  statusEl.textContent = "Đang tìm kiếm...";
+
+  // Cho phép thử lần lượt nhiều API key khi gặp lỗi quota
+  let lastError = null;
+  for(let attempt = 0; attempt < YT_API_KEYS.length; attempt++){
+    const key = getCurrentYtApiKey();
+    try{
+      const params = new URLSearchParams({
+        part: "snippet",
+        type: "video",
+        maxResults: "10",
+        q: query.trim(),
+        key
+      });
+      const resp = await fetch("https://www.googleapis.com/youtube/v3/search?" + params.toString());
+      const data = await resp.json();
+
+      if(!resp.ok){
+        // Nhận biết lỗi quota từ response JSON
+        const errCode = data && data.error && data.error.errors && data.error.errors[0] && data.error.errors[0].reason;
+        if(errCode === "quotaExceeded" || errCode === "dailyLimitExceeded"){
+          lastError = new Error("API key " + (ytApiKeyIndex+1) + " hết lượt (quotaExceeded)");
+          rotateYtApiKey();
+          continue; // thử key tiếp theo
+        }
+        throw new Error("HTTP " + resp.status);
+      }
+
+      const items = data.items || [];
+      if(items.length === 0){
+        statusEl.textContent = "Không tìm thấy kết quả phù hợp.";
+        statusEl.classList.add("err");
+        return;
+      }
+      statusEl.textContent = "Tìm thấy " + items.length + " kết quả.";
+      statusEl.classList.add("ok");
+
+      for(const item of items){
+        const vid = item.id && item.id.videoId;
+        const sn = item.snippet || {};
+        if(!vid) continue;
+        const title = sn.title || "(No title)";
+        const channel = sn.channelTitle || "";
+        const publishedAt = sn.publishedAt ? sn.publishedAt.substring(0,10) : "";
+        const thumbUrl = sn.thumbnails && (sn.thumbnails.medium || sn.thumbnails.default) ? (sn.thumbnails.medium || sn.thumbnails.default).url : "";
+
+        const div = document.createElement("div");
+        div.className = "result-item";
+
+        const thumbDiv = document.createElement("div");
+        thumbDiv.className = "result-thumb";
+        thumbDiv.innerHTML = thumbUrl ? '<img src="'+thumbUrl+'" alt="thumb"/>' : "";
+
+        const mainDiv = document.createElement("div");
+        mainDiv.className = "result-main";
+        mainDiv.innerHTML =
+          '<div class="result-title">'+title+'</div>' +
+          '<div class="result-channel">'+channel+'</div>' +
+          '<div class="result-meta">ID: '+vid+(publishedAt ? " · "+publishedAt : "")+'</div>';
+
+        const actionsDiv = document.createElement("div");
+        actionsDiv.className = "result-actions";
+
+        const addBtn = document.createElement("button");
+        addBtn.textContent = "Thêm vào danh sách";
+        addBtn.addEventListener("click", async ()=>{
+          addBtn.disabled = true;
+          addBtn.textContent = "Đang gửi...";
+          try{
+            await pushToQueue(vid, title);
+            addBtn.textContent = "Đã gửi ✓";
+          }catch(err){
+            addBtn.textContent = "Lỗi, thử lại";
+            console.error(err);
+            alert("Lỗi khi gửi bài: " + err.message);
+          }finally{
+            setTimeout(()=>{
+              addBtn.disabled = false;
+              addBtn.textContent = "Thêm vào danh sách";
+            }, 2000);
+          }
+        });
+
+        const copyBtn = document.createElement("button");
+        copyBtn.textContent = "Copy link";
+        copyBtn.className = "secondary";
+        copyBtn.addEventListener("click", async ()=>{
+          const linkCopy = makeYoutubeUrl(vid);
+          try{
+            await navigator.clipboard.writeText(linkCopy);
+            copyBtn.textContent = "Đã copy ✓";
+            setTimeout(()=> copyBtn.textContent = "Copy link", 1500);
+          }catch(e){
+            console.error(e);
+            alert("Không copy được, bạn vui lòng copy thủ công:\n" + linkCopy);
+          }
+        });
+
+        actionsDiv.appendChild(addBtn);
+        actionsDiv.appendChild(copyBtn);
+
+        div.appendChild(thumbDiv);
+        div.appendChild(mainDiv);
+        div.appendChild(actionsDiv);
+
+        resultsEl.appendChild(div);
+      }
+      // Đã thành công với 1 key thì thoát hàm
+      return;
+    }catch(err){
+      console.error("Search error with key index", ytApiKeyIndex, err);
+      lastError = err;
+      // nếu không phải lỗi quota (đa số trường hợp đã xử lý ở trên) thì dừng
+      break;
+    }
+  }
+
+  statusEl.textContent = "Lỗi tìm kiếm: " + (lastError ? lastError.message : "Không rõ nguyên nhân");
+  statusEl.classList.add("err");
+}
+
+// --- Handlers ---
+document.getElementById("searchBtn").addEventListener("click", ()=>{
+  const q = document.getElementById("searchQuery").value;
+  searchYoutube(q);
+});
+document.getElementById("searchQuery").addEventListener("keydown", (e)=>{
+  if(e.key === "Enter"){
+    searchYoutube(e.target.value);
+  }
+});
+document.getElementById("clearBtn").addEventListener("click", ()=>{
+  document.getElementById("results").innerHTML = "";
+  const st = document.getElementById("searchStatus");
+  st.textContent = "";
+  st.className = "status";
+});
+
+document.getElementById("addLinkBtn").addEventListener("click", async ()=>{
+  const linkInput = document.getElementById("ytlink");
+  const statusEl = document.getElementById("status");
+  statusEl.textContent = "";
+  statusEl.className = "status";
+
+  const link = linkInput.value.trim();
+  const vid = extractVideoId(link);
+  if(!vid){
+    statusEl.textContent = "Link không hợp lệ.";
+    statusEl.classList.add("err");
+    return;
+  }
+  try{
+    await pushToQueue(vid, null);
+    statusEl.textContent = "Đã gửi bài từ link. Cảm ơn!";
+    statusEl.classList.add("ok");
+    linkInput.value = "";
+  }catch(err){
+    console.error(err);
+    statusEl.textContent = "Lỗi: " + err.message;
+    statusEl.classList.add("err");
+  }
+});
+
+// Lắng nghe queue để hiển thị danh sách sẽ phát
+const queueListClient = document.getElementById("queueListClient");
+const clientQueueCount = document.getElementById("clientQueueCount");
+
+db.ref("queue").orderByChild("order").on("value", snap=>{
+  const obj = snap.val() || {};
+  const items = Object.entries(obj).map(([k,v])=>({
+    key: k,
+    videoId: v.videoId,
+    title: v.title || v.url,
+    url: v.url,
+    order: v.order || v.addedAt || 0,
+    addedAt: v.addedAt || null
+  }));
+  items.sort((a,b)=>(a.order||0)-(b.order||0));
+  renderClientQueue(items);
+});
+
+function renderClientQueue(items){
+  queueListClient.innerHTML = "";
+  clientQueueCount.textContent = items.length + " bài";
+
+  if(items.length === 0){
+    const div = document.createElement("div");
+    div.className = "queue-item-client";
+    div.innerHTML = '<div class="queue-main"><div class="queue-title">Chưa có bài nào trong hàng chờ.</div><div class="queue-meta">Thêm bài bằng ô tìm kiếm hoặc dán link ở trên.</div></div>';
+    queueListClient.appendChild(div);
+    return;
+  }
+
+  items.forEach((it, idx)=>{
+    const row = document.createElement("div");
+    row.className = "queue-item-client";
+
+    const idxDiv = document.createElement("div");
+    idxDiv.className = "queue-index";
+    idxDiv.textContent = idx+1;
+
+    const main = document.createElement("div");
+    main.className = "queue-main";
+
+    const title = document.createElement("div");
+    title.className = "queue-title";
+    title.textContent = it.title || it.url || it.videoId;
+    if(idx === 0 && items.length > 0){
+      const badge = document.createElement("span");
+      badge.className = "queue-badge-next";
+      badge.textContent = "Sắp phát";
+      title.appendChild(document.createTextNode(" "));
+      title.appendChild(badge);
+    }
+
+    const meta = document.createElement("div");
+    meta.className = "queue-meta";
+    let txt = "ID: " + (it.videoId || "");
+    if(it.addedAt){
+      const d = new Date(it.addedAt);
+      txt += " · " + d.toLocaleTimeString();
+    }
+    meta.textContent = txt;
+
+    main.appendChild(title);
+    main.appendChild(meta);
+
+    row.appendChild(idxDiv);
+    row.appendChild(main);
+    queueListClient.appendChild(row);
+  });
+}
+</script>
+</body>
+</html>
